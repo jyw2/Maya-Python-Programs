@@ -24,13 +24,18 @@ class Chain():
 			linkRadius = thickness of each link	
 	"""
 	
-	def __init__(self,links,radius = 0.5,linkRadius=0.05):
+	def __init__(self,links,radius = 0.5,linkRadius=0.05,squish =0.75 ):
 		self.links = links
 		self.radius = radius
 		self.linkRadius = linkRadius
 		self.linkObjs = []
 		self.rotationState = False
 		self.linkNumber = 0
+		self.scale = squish
+
+		#ensure the links will fit in the hole without clipping
+		if not (4*self.linkRadius<= self.radius):
+			raise ValueError("Rings are too fat and or short, try reducing link radius or increasing radius")
 
 	def move_link(self,ring):
 		"""Translate the ring based on its position in the chain."""
@@ -49,6 +54,8 @@ class Chain():
 		
 		"""
 		ring = Ring(self.linkNumber,self.radius,self.linkRadius)
+		cmds.scale(1,1,self.scale, ring.get_transform())
+
 		print "ringmade"
 		if self.rotationState == True:
 			cmds.rotate(90 ,0, 0, ring.get_transform())
