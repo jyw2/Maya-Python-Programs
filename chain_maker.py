@@ -1,6 +1,48 @@
 from maya import cmds
 import math
 
+
+
+class Window:
+	"""Creates a window"""
+	def __init__(self):
+			
+		self.windowName = "chainWindow"
+
+		#if window already exists
+		if cmds.window(self.windowName, ex = True):
+			self.cancel()
+
+		cmds.window(self.windowName,iconName = "Chain Maker")
+		
+		#build UI
+		cmds.columnLayout(adjustableColumn = True, co = ("both",100))
+		cmds.intSlider("Links", min = 1, max = 100, value = 1)
+		cmds.button("Confirm", c =self.confirm)
+		cmds.button("Cancel", c = self.cancel)
+
+		cmds.showWindow()
+
+
+	def confirm(self,*args):
+		cmds.deleteUI(self.windowName)
+
+
+
+	def cancel(self,*args):
+		cmds.deleteUI(self.windowName)
+
+
+	
+
+
+
+
+
+
+
+
+
 class Ring():
 	"""A ring in the chain. Stores it's transform string,node string and place on the chain"""
 	def __init__(self,ringNumber,radius,linkRadius):
@@ -127,7 +169,8 @@ class Chain():
 
 
 #Tests
-chain = Chain(20,radius=0.1, linkRadius=0.015)
+#chain = Chain(20,radius=0.1, linkRadius=0.015)
+window = Window()
 
 
 
