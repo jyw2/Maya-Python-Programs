@@ -18,6 +18,6 @@ Directory:
                         Required:
                             Number of links
                         Optional:
-                            radius = float ,linkradius = float
+                            radius = float ,linkRadius = float
                 
     
