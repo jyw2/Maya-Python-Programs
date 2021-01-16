@@ -4,10 +4,20 @@ contained in this repository.
 
 Directory:
     
-    Chain Maker:
+    chain_maker.py:
         Creates a chain in maya with variable number of links, radius, and thickness.
         All links are named and parented to the first ring.
         
         How to use:
-        Import Chainmaker.py
+            in maya's script panel:
+            place chain_maker.py in scripts folder in maya
+                Import chain_maker
+                Create a Chain() object
+
+                    Attributes
+                        Required:
+                            Number of links
+                        Optional:
+                            radius = float ,linkradius = float
+                
     
