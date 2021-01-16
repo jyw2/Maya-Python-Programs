@@ -1,7 +1,8 @@
 from maya import cmds
+import math
 
 class Ring():
-	"""A ring in the chain"""
+	"""A ring in the chain. Stores it's transform string,node string and place on the chain"""
 	def __init__(self,ringNumber,radius,linkRadius):
 		(self.transform,self.shape) = cmds.polyTorus(r=radius,sr=linkRadius)
 		self.ringNumber = ringNumber
@@ -53,12 +54,25 @@ class Chain():
 				Ring object
 		
 		"""
+
+		#general transforms
 		ring = Ring(self.linkNumber,self.radius,self.linkRadius)
-		cmds.scale(1,1,self.scale, ring.get_transform())
+		cmds.setAttr(ring.get_shape() + ".subdivisionsAxis", 4)
+		cmds.setAttr(ring.get_transform() + ".rotateY",45) # rotation in xz plane
+		
+		cmds.polySelect(ring.get_transform(), el = 100) # stretching the square
+		cmds.polySelect(ring.get_transform(), el = 85,add = True)
+		cmds.polyMoveEdge(translateX = -self.radius*(2-math.sqrt(2)))
+
+		cmds.polySelect(ring.get_transform(), el = 90)
+		cmds.polySelect(ring.get_transform(), el = 95, add = True)
+		cmds.polyMoveEdge(translateX = self.radius*(2-math.sqrt(2)))
+	
+		
 
 		print "ringmade"
 		if self.rotationState == True:
-			cmds.rotate(90 ,0, 0, ring.get_transform())
+			cmds.rotate(90 ,0, 45, ring.get_transform(),ws=True)
 			
 		#Makes the next ring rotate 90 deg
 		self.rotationState = not self.rotationState
