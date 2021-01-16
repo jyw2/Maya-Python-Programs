@@ -34,16 +34,20 @@ class Chain():
 		self.linkNumber = 0
 		self.scale = squish
 
+
+
 		#ensure the links will fit in the hole without clipping
 		if not (4*self.linkRadius<= self.radius):
 			raise ValueError("Rings are too fat and or short, try reducing link radius or increasing radius")
+
+		self.create_chain()
 
 	def move_link(self,ring):
 		"""Translate the ring based on its position in the chain."""
 		magnitudeOfTranslate = (ring.get_ringNumber())*(self.radius)+(ring.get_ringNumber())*(self.radius-2*(self.linkRadius))
 		cmds.move(magnitudeOfTranslate, 0, 0 , ring.get_transform())
 
-	def create_link(self,linknumber):
+	def create_link(self):
 		"""Creates a ring
 			
 			Attributes:	
@@ -62,11 +66,11 @@ class Chain():
 		
 		cmds.polySelect(ring.get_transform(), el = 100) # stretching the square
 		cmds.polySelect(ring.get_transform(), el = 85,add = True)
-		cmds.polyMoveEdge(translateX = -self.radius*(2-math.sqrt(2)))
+		cmds.polyMoveEdge(translateX = 0.8*(float(-self.radius)*(2.0-math.sqrt(2))/2))
 
 		cmds.polySelect(ring.get_transform(), el = 90)
 		cmds.polySelect(ring.get_transform(), el = 95, add = True)
-		cmds.polyMoveEdge(translateX = self.radius*(2-math.sqrt(2)))
+		cmds.polyMoveEdge(translateX =0.8*(float( self.radius)*(2.0-math.sqrt(2))/2))
 	
 		
 
@@ -86,21 +90,21 @@ class Chain():
 
 
 		
-	# def create_chain:
+	def create_chain(self):
+		"""Creates and links in relationship all rings. The first
+		ring is the root(parent)"""
+
+		for link in range(self.links):
+			self.create_link()
+		
 
 			
 		
 
 
+#Tests
+chain = Chain(20,radius=0.1, linkRadius=0.015)
 
-chain = Chain(1)
-print " ring created"
-chain.create_link(1)
-chain.create_link(1)
-chain.create_link(1)
-chain.create_link(1)
-chain.create_link(1)
-chain.create_link(1)
-chain.create_link(1)
+
 
 	
