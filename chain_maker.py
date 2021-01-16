@@ -4,14 +4,33 @@ import math
 class Ring():
 	"""A ring in the chain. Stores it's transform string,node string and place on the chain"""
 	def __init__(self,ringNumber,radius,linkRadius):
-		(self.transform,self.shape) = cmds.polyTorus(r=radius,sr=linkRadius)
+
+		#diffirent naming for the first ring
+		if ringNumber == 0:
+			(self.transform,self.shape) = cmds.polyTorus(r=radius,sr=linkRadius, name = "Chain_root")
+			self.ringName = self.transform
+
+			# change pivot to allow easier whole chain scaling
+			# cmds.setAttr(self.transform,ax)
+
+		#Naming for all other rings. Also parents the rings to the first ring.
+		else:
+			(self.transform,self.shape) = cmds.polyTorus(r=radius,sr=linkRadius, name = "ring_"+str(ringNumber))
+			self.ringName = self.transform
+			
+
+
 		self.ringNumber = ringNumber
+		
 	def get_transform(self):
 		return self.transform
 	def get_shape(self):
 		return self.shape
 	def get_ringNumber(self):
 		return self.ringNumber
+	def get_name(self):
+		return self.ringName
+
 		
 			
 
@@ -71,6 +90,7 @@ class Chain():
 		cmds.polySelect(ring.get_transform(), el = 90)
 		cmds.polySelect(ring.get_transform(), el = 95, add = True)
 		cmds.polyMoveEdge(translateX =0.8*(float( self.radius)*(2.0-math.sqrt(2))/2))
+
 	
 		
 
@@ -96,6 +116,10 @@ class Chain():
 
 		for link in range(self.links):
 			self.create_link()
+
+		for link in range(1,len(self.linkObjs)):
+			print (self.linkObjs[link]).get_name()
+			cmds.parent((self.linkObjs[link]).get_name(),self.linkObjs[0].get_name())
 		
 
 			
