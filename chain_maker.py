@@ -7,7 +7,7 @@ class Window:
 	"""Creates a window"""
 	def __init__(self):
 			
-		self.windowName = "chainWindow"
+		self.windowName = "Chain_Maker"
 
 		#if window already exists
 		if cmds.window(self.windowName, ex = True):
@@ -30,7 +30,7 @@ class Window:
 		self.radiusSlider = cmds.floatSlider(min = 0.15, max = 2, value = 0.5 , dc = self.mod_radius)
 
 		cmds.text("Radius of Thickness of Links")
-		self.thicknessSlider = cmds.floatSlider(min = 0.0001, max = 0.5, value = 0.05 , dc = self.mod_thickness)
+		self.thicknessSlider = cmds.floatSlider(min = 0.01, max = 0.5, value = 0.05 , dc = self.mod_thickness)
 
 
 		
@@ -51,20 +51,17 @@ class Window:
 	
 		self.radius = cmds.floatSlider(self.radiusSlider, q = True, v = True)
 		cmds.delete(self.chain.delete_chain())
+		print self.radius
 		chain = Chain(self.links, radius= self.radius, linkRadius= self.radiusLink)
 		cmds.floatSlider(self.thicknessSlider, e = True, max = self.radius/3)
 
 	#Create new chain and modify rad slider to prevent clipping
 	def mod_thickness(self,*args):
 		self.radiusLink = cmds.floatSlider(self.thicknessSlider, q = True, v = True)
+		print self.radiusLink
 		cmds.delete(self.chain.delete_chain())
 		chain = Chain(self.links, radius= self.radius, linkRadius= self.radiusLink)
-		cmds.floatSlider(self.radiusSlider, e = True, min= self.radius*3)
-
-
-
-	# def printt(self,*args):
-	# 	print cmds.floatSlider(self.thickness, value = True, q=True)
+		cmds.floatSlider(self.radiusSlider, e = True, min= self.radiusLink*3)
 
 	def confirm(self,*args):
 		cmds.deleteUI(self.windowName)
@@ -100,7 +97,6 @@ class Ring():
 		
 	def add_parent(self,parentName):
 		self.transform = parentName+"|"+self.transform	
-		print self.transform
 	def get_transform(self):
 		return self.transform
 	def get_shape(self):
@@ -133,10 +129,6 @@ class Chain():
 		self.linkObjs = []
 		self.rotationState = False
 		self.linkNumber = 0
-
-		#ensure the links will fit in the hole without clipping
-		if not (3*self.linkRadius<= self.radius):
-			raise ValueError("Rings are too fat and or short, try reducing link radius or increasing radius")
 
 		self.create_chain()
 
@@ -183,9 +175,6 @@ class Chain():
 		self.move_link(ring)
 		return ring
 
-
-
-		
 	def create_chain(self):
 		"""Creates and links in relationship all rings. The first
 		ring is the root(parent)"""
@@ -194,35 +183,8 @@ class Chain():
 			self.create_link()
 
 		for link in range(1,len(self.linkObjs)):
-			print (self.linkObjs[link]).get_name()
 			cmds.parent((self.linkObjs[link]).get_name(),self.linkObjs[0].get_name())
 			self.linkObjs[link].add_parent(self.linkObjs[0].get_transform())
-
-	def change_chain(self, links = None, length = None, thickness = None):
-		"""modifies the chain properties. Links, length and thickness can 
-		all be changed. EX: change_chain(self, links = int, length = float, thickness = float) """
-		#link number is flagged to change
-		if links:
-
-			changeInLinks = links - self.links
-
-			self.links = links
-
-			#if missing links create and parent links
-			if changeInLinks >0:
-
-				for link in range(changeInLinks):
-
-					newRing = self.create_link()
-					cmds.parent(newRing.get_name(),self.linkObjs[0].get_name())
-					newRing.add_parent(self.linkObjs[0].get_transform())
-
-			#if too many links. Ensure the root node is not deleted
-			elif changeInLinks < 0 and self.links > 1:
-				self.linkObjs[len(self.linkObjs)-1].delete_link()
-				self.linkNumber -= 1
-				self.linkObjs.pop()
-
 
 	def delete_chain(self):
 		rootname = self.linkObjs[0].get_transform()
