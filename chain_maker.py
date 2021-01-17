@@ -170,11 +170,11 @@ class Chain():
 		
 		cmds.polySelect(ring.get_transform(), el = 100) # stretching the square
 		cmds.polySelect(ring.get_transform(), el = 85,add = True)
-		cmds.polyMoveEdge(translateX = 0.8*(float(-self.radius)*(2.0-math.sqrt(2))/2))
+		cmds.polyMoveEdge(translateX = (float(-self.radius)*(2.0-math.sqrt(2))/2))
 
 		cmds.polySelect(ring.get_transform(), el = 90)# stretching the square at opposite corners
 		cmds.polySelect(ring.get_transform(), el = 95, add = True)
-		cmds.polyMoveEdge(translateX =0.8*(float( self.radius)*(2.0-math.sqrt(2))/2))
+		cmds.polyMoveEdge(translateX =(float( self.radius)*(2.0-math.sqrt(2))/2))
 
 		#rotate along chain axis every 2nd link
 		if self.rotationState == True:
