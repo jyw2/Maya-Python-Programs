@@ -9,15 +9,25 @@ Directory:
         All links are named and parented to the first ring.
         
         How to use:
-            in maya's script panel:
-            place chain_maker.py in scripts folder in maya
-                Import chain_maker
-                Create a Chain() object
 
-                    Attributes
-                        Required:
-                            Number of links
-                        Optional:
-                            radius = float ,linkradius = float
+            To start:
+                download chain_maker.py
+                Use "open script" in the maya script panel and select chain_maker.py.
+
+            To use:
+                Use the first slider to control the number of links in the chain.
+                The maximum is 100 links. (This can be modified in the code on line 24 under max = "".)
+
+                The second slider modifies the radius of the chain along the chain axis.
+                Note: DO NOT modify the min value on line 27 or clipping will occur.
+
+                The second slider modifies the radius of thickness of the chain.
+                Note: DO NOT modify the max value on line 30 or clipping will occur.
+
+                Confirm to save the Chain in the scene
+
+                Cancel to remove the Chain from the scene.
+
+
                 
     
