@@ -21,11 +21,15 @@ class Window:
 		cmds.window(self.windowName,iconName = "Chain Maker")
 		
 		#build UI
-		cmds.columnLayout(adjustableColumn = True, co = ("both",100),rs = 30)
+		col = cmds.columnLayout(adjustableColumn = True, co = ("both",100),rs = 10)
 
-		cmds.text("Number of Links" )
+		cmds.text("Number of Links",h=30 )
+		cmds.rowLayout(nc = 2,ad2 = 2,cw = (1,30))
+		self.linkText = cmds.text(label = "1")
 		self.linksSlider = cmds.intSlider(min = 1, max = 100, value = 1, dc = self.mod_links)
-		
+		cmds.setParent(col)
+
+
 		cmds.text("Radius of Links")
 		self.radiusSlider = cmds.floatSlider(min = 0.15, max = 2, value = 0.5 , dc = self.mod_radius)
 
@@ -45,6 +49,7 @@ class Window:
 		if self.links > 1:
 			cmds.delete(self.chain.delete_chain())
 			chain = Chain(self.links, radius= self.radius, linkRadius= self.radiusLink)
+			cmds.text(self.linkText,edit=True, label = str(self.links))
 
 	#Create new chain and modify thickness slider to prevent clipping
 	def mod_radius(self,*args):
