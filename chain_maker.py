@@ -24,10 +24,10 @@ class Window:
 		self.linksSlider = cmds.intSlider(min = 1, max = 100, value = 1, dc = self.mod_links)
 		
 		cmds.text("Radius of Links")
-		self.radiusSlider = cmds.floatSlider(min = 0.01, max = 10, value = 0.5 , dc = self.mod_radius)
+		self.radiusSlider = cmds.floatSlider(min = 0.01, max = 2, value = 0.5 , dc = self.mod_radius)
 
 		cmds.text("Radius of Thickness of Links")
-		self.thicknessSlider = cmds.floatSlider(min = 0.0001, max = 2, value = 0.05 , dc = self.mod_thickness)
+		self.thicknessSlider = cmds.floatSlider(min = 0.0001, max = 0.5, value = 0.05 , dc = self.mod_thickness)
 
 
 		
@@ -39,16 +39,15 @@ class Window:
 
 	def mod_links(self,*args):
 		newLinks = cmds.intSlider(self.linksSlider, q = True, v = True)
-		print newLinks
+		self.chain.change_chain(links = newLinks)
 
 	def mod_radius(self,*args):
 		newRadius = cmds.floatSlider(self.radiusSlider, q = True, v = True)
-		print newRadius
-
+		self.chain.change_chain(length = newRadius)
 
 	def mod_thickness(self,*args):
 		newLinkRadius = cmds.floatSlider(self.thicknessSlider, q = True, v = True)
-		print newLinkRadius
+		self.chain.change_chain(thickness= newLinkRadius)
 
 
 	# def printt(self,*args):
@@ -86,6 +85,9 @@ class Ring():
 
 		self.ringNumber = ringNumber
 		
+	def add_parent(self,parentName):
+		self.transform = parentName+"|"+self.transform	
+		print self.transform
 	def get_transform(self):
 		return self.transform
 	def get_shape(self):
@@ -181,64 +183,79 @@ class Chain():
 		for link in range(1,len(self.linkObjs)):
 			print (self.linkObjs[link]).get_name()
 			cmds.parent((self.linkObjs[link]).get_name(),self.linkObjs[0].get_name())
+			self.linkObjs[link].add_parent(self.linkObjs[0].get_transform())
 
 	def change_chain(self, links = None, length = None, thickness = None):
 		"""modifies the chain properties. Links, length and thickness can 
 		all be changed. EX: change_chain(self, links = int, length = float, thickness = float) """
-		for ring in self.linkObjs:
+		#link number is flagged to change
+		if links:
 
-			
-			#link number is flagged to change
-			if links:
+			changeInLinks = links - self.links
 
-				changeInLinks = self.links - links
+			self.links = links
 
-				self.links = links
+			#if missing links create and parent links
+			if changeInLinks >0:
 
-				#if missing links
-				if changeInLinks >0:
+				for link in range(changeInLinks):
 
-					for link in range(changeInLinks):
+					newRing = self.create_link()
+					cmds.parent(newRing.get_name(),self.linkObjs[0].get_name())
+					newRing.add_parent(self.linkObjs[0].get_transform())
 
-						self.create_link()
+			#if too many links. Ensure the root node is not deleted
+			elif changeInLinks < 0 and self.links > 1:
+				self.linkObjs[len(self.linkObjs)-1].delete_link()
+				self.linkNumber -= 1
+				self.linkObjs.pop()
 
-				#if too many links
-				elif changeInLinks < 0:
-					endIndex = len(self.linkObjs)
-					startIndex = len(self.linkObjs)+changeInLinks
-					for linkIndex in range(startIndex,endIndex):
-						ring.delete_link()
-						self.linkNumber -= 1
 
 				
-			#length is flagged to change
-			if length:
+		#length is flagged to change
+		if length:
+			for ring in self.linkObjs:
 				#reset the link to 0 for easier re-transform
 				magnitudeOfTranslate = (ring.get_ringNumber())*(self.radius)+(ring.get_ringNumber())*(self.radius-2*(self.linkRadius))
 				cmds.move(-magnitudeOfTranslate, 0, 0 , ring.get_transform())
+				
+			changeInRadius = self.radius - length
 
+			for ring in self.linkObjs:
 				# Prepare the variables for transforming
-				pastTransformX = 0.8*(float(-self.radius)*(2.0-math.sqrt(2))/2)
-
+				# pastTransformX = 0.8*(float(-self.radius)*(2.0-math.sqrt(2))/2)
+				
 				self.radius = length
 
-				newTransformX = 0.8*(float(-self.radius)*(2.0-math.sqrt(2))/2)
+				# newTransformX = 0.8*(float(-self.radius)*(2.0-math.sqrt(2))/2)
 
 				#reshape
 				cmds.polySelect(ring.get_transform(), el = 100) # stretching the square
 				cmds.polySelect(ring.get_transform(), el = 85,add = True)
-				cmds.polyMoveEdge(translateX = 0.8*(newTransformX - pastTransformX))
+				cmds.polyMoveEdge(translateX = (changeInRadius))
+
+				cmds.polySelect(ring.get_transform(), el = 100) # stretching the square z
+				cmds.polySelect(ring.get_transform(), el = 95,add = True)
+				cmds.polyMoveEdge(translateZ = (changeInRadius))
 
 
 				cmds.polySelect(ring.get_transform(), el = 90)
 				cmds.polySelect(ring.get_transform(), el = 95, add = True)
-				cmds.polyMoveEdge(translateX = -0.8*(newTransformX - pastTransformX))
+				cmds.polyMoveEdge(translateX = -(changeInRadius))
+
+				cmds.polySelect(ring.get_transform(), el = 85) # stretching the square z
+				cmds.polySelect(ring.get_transform(), el = 90,add = True)
+				cmds.polyMoveEdge(translateZ = -(changeInRadius))
+
 
 				self.move_link(ring)
 
+				
 
-			#thickness is flagged to change.
-			if thickness:
+
+		#thickness is flagged to change.
+		if thickness:
+			for ring in self.linkObjs:
 				#reset the link to 0 for easier re-transform
 				magnitudeOfTranslate = (ring.get_ringNumber())*(self.radius)+(ring.get_ringNumber())*(self.radius-2*(self.linkRadius))
 				cmds.move(-magnitudeOfTranslate, 0, 0 , ring.get_transform())
