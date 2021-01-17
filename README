@@ -13,6 +13,7 @@ Directory:
             To start:
                 download chain_maker.py
                 Use "open script" in the maya script panel and select chain_maker.py.
+                Run the script using the double arrows in the script panel.
 
             To use:
                 Use the first slider to control the number of links in the chain.
