@@ -13,16 +13,46 @@ class Window:
 		if cmds.window(self.windowName, ex = True):
 			self.cancel()
 
+		#Initiate chain and window
+		self.chain = Chain(1)
 		cmds.window(self.windowName,iconName = "Chain Maker")
 		
 		#build UI
-		cmds.columnLayout(adjustableColumn = True, co = ("both",100))
-		cmds.intSlider("Links", min = 1, max = 100, value = 1)
+		cmds.columnLayout(adjustableColumn = True, co = ("both",100),rs = 30)
+
+		cmds.text("Number of Links" )
+		self.linksSlider = cmds.intSlider(min = 1, max = 100, value = 1, dc = self.mod_links)
+		
+		cmds.text("Radius of Links")
+		self.radiusSlider = cmds.floatSlider(min = 0.01, max = 10, value = 0.5 , dc = self.mod_radius)
+
+		cmds.text("Radius of Thickness of Links")
+		self.thicknessSlider = cmds.floatSlider(min = 0.0001, max = 2, value = 0.05 , dc = self.mod_thickness)
+
+
+		
 		cmds.button("Confirm", c =self.confirm)
+
 		cmds.button("Cancel", c = self.cancel)
 
 		cmds.showWindow()
 
+	def mod_links(self,*args):
+		newLinks = cmds.intSlider(self.linksSlider, q = True, v = True)
+		print newLinks
+
+	def mod_radius(self,*args):
+		newRadius = cmds.floatSlider(self.radiusSlider, q = True, v = True)
+		print newRadius
+
+
+	def mod_thickness(self,*args):
+		newLinkRadius = cmds.floatSlider(self.thicknessSlider, q = True, v = True)
+		print newLinkRadius
+
+
+	# def printt(self,*args):
+	# 	print cmds.floatSlider(self.thickness, value = True, q=True)
 
 	def confirm(self,*args):
 		cmds.deleteUI(self.windowName)
@@ -31,15 +61,7 @@ class Window:
 
 	def cancel(self,*args):
 		cmds.deleteUI(self.windowName)
-
-
-	
-
-
-
-
-
-
+		cmds.delete(self.chain.delete_chain())
 
 
 
@@ -73,6 +95,9 @@ class Ring():
 	def get_name(self):
 		return self.ringName
 
+	def delete_link(self):
+		cmds.delete(self.transform)
+
 		
 			
 
@@ -86,16 +111,13 @@ class Chain():
 			linkRadius = thickness of each link	
 	"""
 	
-	def __init__(self,links,radius = 0.5,linkRadius=0.05,squish =0.75 ):
+	def __init__(self,links,radius = 0.5,linkRadius=0.05):
 		self.links = links
 		self.radius = radius
 		self.linkRadius = linkRadius
 		self.linkObjs = []
 		self.rotationState = False
 		self.linkNumber = 0
-		self.scale = squish
-
-
 
 		#ensure the links will fit in the hole without clipping
 		if not (4*self.linkRadius<= self.radius):
@@ -133,10 +155,7 @@ class Chain():
 		cmds.polySelect(ring.get_transform(), el = 95, add = True)
 		cmds.polyMoveEdge(translateX =0.8*(float( self.radius)*(2.0-math.sqrt(2))/2))
 
-	
-		
-
-		print "ringmade"
+		#rotate
 		if self.rotationState == True:
 			cmds.rotate(90 ,0, 45, ring.get_transform(),ws=True)
 			
@@ -162,6 +181,91 @@ class Chain():
 		for link in range(1,len(self.linkObjs)):
 			print (self.linkObjs[link]).get_name()
 			cmds.parent((self.linkObjs[link]).get_name(),self.linkObjs[0].get_name())
+
+	def change_chain(self, links = None, length = None, thickness = None):
+		"""modifies the chain properties. Links, length and thickness can 
+		all be changed. EX: change_chain(self, links = int, length = float, thickness = float) """
+		for ring in self.linkObjs:
+
+			
+			#link number is flagged to change
+			if links:
+
+				changeInLinks = self.links - links
+
+				self.links = links
+
+				#if missing links
+				if changeInLinks >0:
+
+					for link in range(changeInLinks):
+
+						self.create_link()
+
+				#if too many links
+				elif changeInLinks < 0:
+					endIndex = len(self.linkObjs)
+					startIndex = len(self.linkObjs)+changeInLinks
+					for linkIndex in range(startIndex,endIndex):
+						ring.delete_link()
+						self.linkNumber -= 1
+
+				
+			#length is flagged to change
+			if length:
+				#reset the link to 0 for easier re-transform
+				magnitudeOfTranslate = (ring.get_ringNumber())*(self.radius)+(ring.get_ringNumber())*(self.radius-2*(self.linkRadius))
+				cmds.move(-magnitudeOfTranslate, 0, 0 , ring.get_transform())
+
+				# Prepare the variables for transforming
+				pastTransformX = 0.8*(float(-self.radius)*(2.0-math.sqrt(2))/2)
+
+				self.radius = length
+
+				newTransformX = 0.8*(float(-self.radius)*(2.0-math.sqrt(2))/2)
+
+				#reshape
+				cmds.polySelect(ring.get_transform(), el = 100) # stretching the square
+				cmds.polySelect(ring.get_transform(), el = 85,add = True)
+				cmds.polyMoveEdge(translateX = 0.8*(newTransformX - pastTransformX))
+
+
+				cmds.polySelect(ring.get_transform(), el = 90)
+				cmds.polySelect(ring.get_transform(), el = 95, add = True)
+				cmds.polyMoveEdge(translateX = -0.8*(newTransformX - pastTransformX))
+
+				self.move_link(ring)
+
+
+			#thickness is flagged to change.
+			if thickness:
+				#reset the link to 0 for easier re-transform
+				magnitudeOfTranslate = (ring.get_ringNumber())*(self.radius)+(ring.get_ringNumber())*(self.radius-2*(self.linkRadius))
+				cmds.move(-magnitudeOfTranslate, 0, 0 , ring.get_transform())
+
+				# Prepare the variables for transforming
+				pastTransformX = 0.8*(newTransformX - pastTransformX)
+
+				self.linkRadius = thickness
+
+				newTransformX = -0.8*(newTransformX - pastTransformX)
+
+				#reshape
+				cmds.polySelect(ring.get_transform(), el = 100) # stretching the square
+				cmds.polySelect(ring.get_transform(), el = 85,add = True)
+				cmds.polyMoveEdge(translateX = 0.8*(newTransformX - pastTransformX))
+
+				cmds.polySelect(ring.get_transform(), el = 90)
+				cmds.polySelect(ring.get_transform(), el = 95, add = True)
+				cmds.polyMoveEdge(translateX =-0.8*(newTransformX - pastTransformX))
+
+				self.move_link(ring)
+
+	def delete_chain(self):
+		rootname = self.linkObjs[0].get_transform()
+		cmds.delete(rootname)
+
+		
 		
 
 			
