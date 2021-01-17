@@ -15,9 +15,6 @@ class Window:
 
 		#Initiate chain and window
 		self.chain = Chain(1)
-		self.links = 1
-		self.radius = 0.5
-		self.radiusLink = 0.05
 		cmds.window(self.windowName,iconName = "Chain Maker")
 		
 		#build UI
@@ -27,7 +24,7 @@ class Window:
 		self.linksSlider = cmds.intSlider(min = 1, max = 100, value = 1, dc = self.mod_links)
 		
 		cmds.text("Radius of Links")
-		self.radiusSlider = cmds.floatSlider(min = 0.15, max = 2, value = 0.5 , dc = self.mod_radius)
+		self.radiusSlider = cmds.floatSlider(min = 0.01, max = 2, value = 0.5 , dc = self.mod_radius)
 
 		cmds.text("Radius of Thickness of Links")
 		self.thicknessSlider = cmds.floatSlider(min = 0.0001, max = 0.5, value = 0.05 , dc = self.mod_thickness)
@@ -41,26 +38,16 @@ class Window:
 		cmds.showWindow()
 
 	def mod_links(self,*args):
-		self.links = cmds.intSlider(self.linksSlider, q = True, v = True)
-		if self.links > 1:
-			cmds.delete(self.chain.delete_chain())
-			chain = Chain(self.links, radius= self.radius, linkRadius= self.radiusLink)
+		newLinks = cmds.intSlider(self.linksSlider, q = True, v = True)
+		self.chain.change_chain(links = newLinks)
 
-	#Create new chain and modify thickness slider to prevent clipping
 	def mod_radius(self,*args):
-	
-		self.radius = cmds.floatSlider(self.radiusSlider, q = True, v = True)
-		cmds.delete(self.chain.delete_chain())
-		chain = Chain(self.links, radius= self.radius, linkRadius= self.radiusLink)
-		cmds.floatSlider(self.thicknessSlider, e = True, max = self.radius/3)
+		newRadius = cmds.floatSlider(self.radiusSlider, q = True, v = True)
+		self.chain.change_chain(length = newRadius)
 
-	#Create new chain and modify rad slider to prevent clipping
 	def mod_thickness(self,*args):
-		self.radiusLink = cmds.floatSlider(self.thicknessSlider, q = True, v = True)
-		cmds.delete(self.chain.delete_chain())
-		chain = Chain(self.links, radius= self.radius, linkRadius= self.radiusLink)
-		cmds.floatSlider(self.radiusSlider, e = True, min= self.radius*3)
-
+		newLinkRadius = cmds.floatSlider(self.thicknessSlider, q = True, v = True)
+		self.chain.change_chain(thickness= newLinkRadius)
 
 
 	# def printt(self,*args):
@@ -135,7 +122,7 @@ class Chain():
 		self.linkNumber = 0
 
 		#ensure the links will fit in the hole without clipping
-		if not (3*self.linkRadius<= self.radius):
+		if not (4*self.linkRadius<= self.radius):
 			raise ValueError("Rings are too fat and or short, try reducing link radius or increasing radius")
 
 		self.create_chain()
@@ -223,6 +210,73 @@ class Chain():
 				self.linkNumber -= 1
 				self.linkObjs.pop()
 
+
+				
+		#length is flagged to change
+		if length:
+			for ring in self.linkObjs:
+				#reset the link to 0 for easier re-transform
+				magnitudeOfTranslate = (ring.get_ringNumber())*(self.radius)+(ring.get_ringNumber())*(self.radius-2*(self.linkRadius))
+				cmds.move(-magnitudeOfTranslate, 0, 0 , ring.get_transform())
+				
+			changeInRadius = self.radius - length
+
+			for ring in self.linkObjs:
+				# Prepare the variables for transforming
+				# pastTransformX = 0.8*(float(-self.radius)*(2.0-math.sqrt(2))/2)
+				
+				self.radius = length
+
+				# newTransformX = 0.8*(float(-self.radius)*(2.0-math.sqrt(2))/2)
+
+				#reshape
+				cmds.polySelect(ring.get_transform(), el = 100) # stretching the square
+				cmds.polySelect(ring.get_transform(), el = 85,add = True)
+				cmds.polyMoveEdge(translateX = (changeInRadius))
+
+				cmds.polySelect(ring.get_transform(), el = 100) # stretching the square z
+				cmds.polySelect(ring.get_transform(), el = 95,add = True)
+				cmds.polyMoveEdge(translateZ = (changeInRadius))
+
+
+				cmds.polySelect(ring.get_transform(), el = 90)
+				cmds.polySelect(ring.get_transform(), el = 95, add = True)
+				cmds.polyMoveEdge(translateX = -(changeInRadius))
+
+				cmds.polySelect(ring.get_transform(), el = 85) # stretching the square z
+				cmds.polySelect(ring.get_transform(), el = 90,add = True)
+				cmds.polyMoveEdge(translateZ = -(changeInRadius))
+
+
+				self.move_link(ring)
+
+				
+
+
+		#thickness is flagged to change.
+		if thickness:
+			for ring in self.linkObjs:
+				#reset the link to 0 for easier re-transform
+				magnitudeOfTranslate = (ring.get_ringNumber())*(self.radius)+(ring.get_ringNumber())*(self.radius-2*(self.linkRadius))
+				cmds.move(-magnitudeOfTranslate, 0, 0 , ring.get_transform())
+
+				# Prepare the variables for transforming
+				pastTransformX = 0.8*(newTransformX - pastTransformX)
+
+				self.linkRadius = thickness
+
+				newTransformX = -0.8*(newTransformX - pastTransformX)
+
+				#reshape
+				cmds.polySelect(ring.get_transform(), el = 100) # stretching the square
+				cmds.polySelect(ring.get_transform(), el = 85,add = True)
+				cmds.polyMoveEdge(translateX = 0.8*(newTransformX - pastTransformX))
+
+				cmds.polySelect(ring.get_transform(), el = 90)
+				cmds.polySelect(ring.get_transform(), el = 95, add = True)
+				cmds.polyMoveEdge(translateX =-0.8*(newTransformX - pastTransformX))
+
+				self.move_link(ring)
 
 	def delete_chain(self):
 		rootname = self.linkObjs[0].get_transform()
